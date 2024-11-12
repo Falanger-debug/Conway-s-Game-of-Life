@@ -1,115 +1,129 @@
-import pygame
-import sys
+import tkinter as tk
+from tkinter import filedialog
 import numpy as np
 
 # Game settings
 WIDTH, HEIGHT = 45, 45
 CELL_SIZE = 10
-SCREEN_WIDTH = WIDTH * CELL_SIZE
-SCREEN_HEIGHT = HEIGHT * CELL_SIZE + 50  # Dodatkowy pasek na przyciski
 FPS = 15
 
 # Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-BUTTON_COLOR = (0, 0, 255)
-BUTTON_HOVER_COLOR = (0, 0, 200)
-GRID_COLOR = (212, 201, 171)
-BACKGROUND_COLOR = (0, 0, 0)
-
-# Initialize Pygame
-pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Conway's Game of Life")
-clock = pygame.time.Clock()
+WHITE = "white"
+BLACK = "black"
+GREEN = "green"
+BUTTON_COLOR = "blue"
+BUTTON_HOVER_COLOR = "dark blue"
+GRID_COLOR = "#D4C9AB"  # Kolor siatki
+BACKGROUND_COLOR = "black"
 
 # Grid data
 grid = np.zeros((WIDTH, HEIGHT), dtype=int)
 running = False  # Czy symulacja jest uruchomiona
 
-# Draw functions
-def draw_grid():
-    screen.fill(BACKGROUND_COLOR)
-    for x in range(WIDTH):
-        for y in range(HEIGHT):
-            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(screen, GRID_COLOR, rect, 1)
-            if grid[x, y] == 1:
-                pygame.draw.rect(screen, WHITE, rect)
 
-def draw_button(text, x, y, width, height, color, hover_color):
-    mouse_pos = pygame.mouse.get_pos()
-    button_rect = pygame.Rect(x, y, width, height)
-    current_color = hover_color if button_rect.collidepoint(mouse_pos) else color
-    pygame.draw.rect(screen, current_color, button_rect)
-    font = pygame.font.Font(None, 36)
-    text_surf = font.render(text, True, WHITE)
-    text_rect = text_surf.get_rect(center=button_rect.center)
-    screen.blit(text_surf, text_rect)
-    return button_rect
+class GameOfLifeApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Conway's Game of Life")
 
-# Game logic
-def update_grid():
-    global grid
-    new_grid = np.copy(grid)
-    for x in range(WIDTH):
-        for y in range(HEIGHT):
-            neighbors = np.sum(grid[x-1:x+2, y-1:y+2]) - grid[x, y]
-            if grid[x, y] == 1 and (neighbors < 2 or neighbors > 3):
-                new_grid[x, y] = 0
-            elif grid[x, y] == 0 and neighbors == 3:
-                new_grid[x, y] = 1
-    grid = new_grid
+        # Canvas for the grid
+        self.canvas = tk.Canvas(
+            root, width=WIDTH * CELL_SIZE, height=HEIGHT * CELL_SIZE, bg=BACKGROUND_COLOR
+        )
+        self.canvas.grid(row=0, column=0, columnspan=3)
+        self.canvas.bind("<Button-1>", self.left_click)  # Lewy przycisk myszy
+        self.canvas.bind("<Button-3>", self.right_click)  # Prawy przycisk myszy
 
-# Toggle cell state on click
-def set_cell(x, y, state):
-    grid[x, y] = state
+        # Buttons
+        self.load_button = tk.Button(
+            root, text="Load", command=self.load_data_from_file, bg=BUTTON_COLOR, fg=WHITE
+        )
+        self.load_button.grid(row=1, column=0, padx=5, pady=5)
 
-# Load data from file
-def load_data(filename="data_points/simple_example.csv"):
-    global grid
-    try:
-        with open(filename, "r") as f:
-            for line in f:
-                x, y = map(int, line.strip().split(","))
-                if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-                    grid[x, y] = 1
-        print("Data loaded successfully")
-    except FileNotFoundError:
-        print("File not found")
-    except ValueError:
-        print("Invalid data format")
+        self.start_button = tk.Button(
+            root, text="Start", command=self.toggle_running, bg=BUTTON_COLOR, fg=WHITE
+        )
+        self.start_button.grid(row=1, column=1, padx=5, pady=5)
 
-# Main loop
-def main():
-    global running
-    while True:
-        draw_grid()
-        load_button = draw_button("Load", 10, SCREEN_HEIGHT - 40, 80, 30, BUTTON_COLOR, BUTTON_HOVER_COLOR)
-        start_button = draw_button("Start" if not running else "Pause", 100, SCREEN_HEIGHT - 40, 80, 30, BUTTON_COLOR, BUTTON_HOVER_COLOR)
-        pygame.display.flip()
-        clock.tick(FPS)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                if mouse_y < SCREEN_HEIGHT - 50:  # W obszarze siatki
-                    cell_x, cell_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
-                    if event.button == 1:  # Lewy przycisk myszy - ustawia komórkę na 1
-                        set_cell(cell_x, cell_y, 1)
-                    elif event.button == 3:  # Prawy przycisk myszy - ustawia komórkę na 0
-                        set_cell(cell_x, cell_y, 0)
-                elif load_button.collidepoint(event.pos):
-                    load_data()
-                elif start_button.collidepoint(event.pos):
-                    running = not running
+        # Game loop
+        self.update_canvas()
+        self.root.after(1000 // FPS, self.game_loop)
 
+    def draw_grid(self):
+        self.canvas.delete("all")
+        for x in range(WIDTH):
+            for y in range(HEIGHT):
+                x1, y1 = x * CELL_SIZE, y * CELL_SIZE
+                x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE
+                color = WHITE if grid[x, y] == 1 else BACKGROUND_COLOR
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
+
+    def update_grid(self):
+        global grid
+        new_grid = np.copy(grid)
+        for x in range(WIDTH):
+            for y in range(HEIGHT):
+                neighbors = np.sum(grid[x - 1 : x + 2, y - 1 : y + 2]) - grid[x, y]
+                if grid[x, y] == 1 and (neighbors < 2 or neighbors > 3):
+                    new_grid[x, y] = 0
+                elif grid[x, y] == 0 and neighbors == 3:
+                    new_grid[x, y] = 1
+        grid = new_grid
+
+    def game_loop(self):
         if running:
-            update_grid()
+            self.update_grid()
+        self.update_canvas()
+        self.root.after(1000 // FPS, self.game_loop)
+
+    def update_canvas(self):
+        self.draw_grid()
+
+    def toggle_running(self):
+        global running
+        running = not running
+        self.start_button.config(text="Pause" if running else "Start")
+
+    def left_click(self, event):
+        # Lewy przycisk myszy - ustawia komórkę na 1
+        x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
+        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+            grid[x, y] = 1
+        self.update_canvas()
+
+    def right_click(self, event):
+        # Prawy przycisk myszy - ustawia komórkę na 0
+        x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
+        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+            grid[x, y] = 0
+        self.update_canvas()
+
+    def load_data_from_file(self):
+        global grid
+        file_path = filedialog.askopenfilename(
+            title="Select a file", filetypes=[("CSV files", "*.csv")]
+        )
+        if file_path:
+            try:
+                with open(file_path, "r") as f:
+                    for line in f:
+                        x, y = map(int, line.strip().split(","))
+                        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+                            grid[x, y] = 1
+                print("Data loaded successfully from:", file_path)
+            except FileNotFoundError:
+                print("File not found")
+            except ValueError:
+                print("Invalid data format")
+        self.update_canvas()
+
+    def on_closing(self):
+        self.root.destroy()
+
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = GameOfLifeApp(root)
+    root.mainloop()
