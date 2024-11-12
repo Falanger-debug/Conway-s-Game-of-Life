@@ -1,11 +1,16 @@
 import tkinter as tk
 from tkinter import filedialog
+from typing import Literal
+
 import numpy as np
 
 # Game settings
 WIDTH, HEIGHT = 60, 60
 CELL_SIZE = 10
 FPS = 10
+
+# Default directory for file dialog
+INITIAL_DIR = "./data_points"
 
 # Colors
 BUTTON_COLOR = "blue"
@@ -20,7 +25,7 @@ running = False
 
 class GameOfLifeApp:
     def __init__(self, root):
-        self.root = root # main container for all the widgets
+        self.root = root  # main container for all the widgets
         self.root.title("Conway's Game of Life")
 
         self.canvas = tk.Canvas(
@@ -41,6 +46,11 @@ class GameOfLifeApp:
         )
         self.start_button.grid(row=1, column=1, padx=5, pady=5)
 
+        self.clear_button = tk.Button(
+            root, text="Clear", command=self.clear_grid, bg=BUTTON_COLOR, fg="white"
+        )
+        self.clear_button.grid(row=1, column=2, padx=5, pady=5)
+
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Game loop
@@ -51,8 +61,8 @@ class GameOfLifeApp:
         self.canvas.delete("all")
         for x in range(WIDTH):
             for y in range(HEIGHT):
-                x1, y1 = x * CELL_SIZE, y * CELL_SIZE # top left corner of the cell
-                x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE # bottom right corner of the cell
+                x1, y1 = x * CELL_SIZE, y * CELL_SIZE  # top left corner of the cell
+                x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE  # bottom right corner of the cell
                 color = "white" if grid[x, y] == 1 else BACKGROUND_COLOR
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
 
@@ -61,7 +71,7 @@ class GameOfLifeApp:
         new_grid = np.copy(grid)
         for x in range(WIDTH):
             for y in range(HEIGHT):
-                neighbors = np.sum(grid[x - 1 : x + 2, y - 1 : y + 2]) - grid[x, y]
+                neighbors = np.sum(grid[x - 1: x + 2, y - 1: y + 2]) - grid[x, y]
                 if grid[x, y] == 1 and (neighbors < 2 or neighbors > 3):
                     new_grid[x, y] = 0
                 elif grid[x, y] == 0 and neighbors == 3:
@@ -79,6 +89,10 @@ class GameOfLifeApp:
         running = not running
         self.start_button.config(text="Pause" if running else "Start")
 
+        state = "disabled" if running else "normal"
+        self.load_button.config(state=state)
+        self.clear_button.config(state=state)
+
     def left_click(self, event):
         x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
@@ -94,7 +108,7 @@ class GameOfLifeApp:
     def load_data_from_file(self):
         global grid
         file_path = filedialog.askopenfilename(
-            title="Select a file", filetypes=[("CSV files", "*.csv")]
+            title="Select a file", filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
         )
         if file_path:
             try:
@@ -108,6 +122,13 @@ class GameOfLifeApp:
                 print("File not found")
             except ValueError:
                 print("Invalid data format")
+        self.draw_grid()
+
+    def clear_grid(self):
+        if running:
+            return
+        global grid
+        grid = np.zeros((WIDTH, HEIGHT), dtype=int)
         self.draw_grid()
 
     def on_closing(self):
