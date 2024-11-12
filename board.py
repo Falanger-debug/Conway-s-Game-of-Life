@@ -1,13 +1,12 @@
 import tkinter as tk
 from tkinter import filedialog
-from typing import Literal
 
 import numpy as np
 
 # Game settings
 WIDTH, HEIGHT = 60, 60
 CELL_SIZE = 10
-FPS = 10
+FPS = 100
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"
@@ -41,21 +40,25 @@ class GameOfLifeApp:
         )
         self.load_button.grid(row=1, column=0, padx=5, pady=5)
 
+        self.save_button = tk.Button(
+            root, text="Save", command=self.save_data_to_file, bg=BUTTON_COLOR, fg="white"
+        )
+        self.save_button.grid(row=1, column=1, padx=5, pady=5)
+
         self.start_button = tk.Button(
             root, text="Start", command=self.toggle_running, bg=BUTTON_COLOR, fg="white"
         )
-        self.start_button.grid(row=1, column=1, padx=5, pady=5)
+        self.start_button.grid(row=1, column=2, padx=5, pady=5)
 
         self.clear_button = tk.Button(
             root, text="Clear", command=self.clear_grid, bg=BUTTON_COLOR, fg="white"
         )
-        self.clear_button.grid(row=1, column=2, padx=5, pady=5)
+        self.clear_button.grid(row=1, column=3, padx=5, pady=5)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Game loop
         self.draw_grid()
-        self.root.after(1000 // FPS, self.game_loop)
 
     def draw_grid(self):
         self.canvas.delete("all")
@@ -77,9 +80,11 @@ class GameOfLifeApp:
                 elif grid[x, y] == 0 and neighbors == 3:
                     new_grid[x, y] = 1
         grid = new_grid
+        print("Grid updated")
 
     def game_loop(self):
         if running:
+            print("Game loop running")
             self.update_grid()
         self.draw_grid()
         self.root.after(1000 // FPS, self.game_loop)
@@ -87,11 +92,16 @@ class GameOfLifeApp:
     def toggle_running(self):
         global running
         running = not running
-        self.start_button.config(text="Pause" if running else "Start")
+        self.start_button.config(text="Pause" if running else "Start", bg=BUTTON_COLOR)
 
         state = "disabled" if running else "normal"
         self.load_button.config(state=state)
         self.clear_button.config(state=state)
+        self.save_button.config(state=state)
+
+        print(f"Game {'started' if running else 'paused'}")
+        if running:
+            self.root.after(1000 // FPS, self.game_loop)
 
     def left_click(self, event):
         x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
@@ -123,6 +133,24 @@ class GameOfLifeApp:
             except ValueError:
                 print("Invalid data format")
         self.draw_grid()
+
+    def save_data_to_file(self):
+        file_path = filedialog.asksaveasfilename(
+            title="Save as", defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
+        )
+        if file_path:
+            try:
+                with open(file_path, "w") as f:
+                    for x in range(WIDTH):
+                        for y in range(HEIGHT):
+                            if grid[x, y] == 1:
+                                f.write(f"{x},{y}\n")
+                print("Data saved successfully to:", file_path)
+            except FileNotFoundError:
+                print("File not found")
+            except Exception as e:
+                print("Error saving file:", e)
 
     def clear_grid(self):
         if running:
