@@ -1,11 +1,13 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 
 import numpy as np
 
 # Game settings
-WIDTH, HEIGHT = 250, 250
+WIDTH, HEIGHT = 100, 100
 CELL_SIZE = 10
+MIN_CELL_SIZE = 2
+MAX_CELL_SIZE = 50
 FPS = 1
 
 # Default directory for file dialog
@@ -67,33 +69,50 @@ class GameOfLifeApp:
         self.root = root  # main container for all the widgets
         self.root.title(RULE["name"])
 
+        # Zoom level
+        self.cell_size = CELL_SIZE
+        self.offset_x = 0
+        self.offset_y = 0
+        self.panning = False
+
         self.canvas = tk.Canvas(
-            root, width=WIDTH * CELL_SIZE, height=HEIGHT * CELL_SIZE, bg=BACKGROUND_COLOR
+            root, width=1200, height=600, bg=BACKGROUND_COLOR
         )
         self.canvas.grid(row=0, column=0, columnspan=3)
+        self.canvas.bind("<ButtonPress-1>", self.start_pan)
+        self.canvas.bind("<B1-Motion>", self.pan)
+        self.canvas.bind("<ButtonRelease-1>", self.end_pan)
         self.canvas.bind("<Button-1>", self.left_click)
         self.canvas.bind("<Button-3>", self.right_click)
+        self.canvas.bind("<MouseWheel>", self.zoom)
+
+        self.last_mouse_x = None
+        self.last_mouse_y = None
+
+        # Control panel
+        control_frame = ttk.LabelFrame(root, text="Controls", padding=(10, 10))
+        control_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
 
         # Buttons
-        self.load_button = tk.Button(
-            root, text="Load", command=self.load_data_from_file, bg=BUTTON_COLOR, fg="white"
-        )
-        self.load_button.grid(row=1, column=0, padx=5, pady=5)
+        self.start_button = ttk.Button(control_frame, text="Start", command=self.toggle_running)
+        self.start_button.grid(row=0, column=0, padx=5, pady=5)
 
-        self.save_button = tk.Button(
-            root, text="Save", command=self.save_data_to_file, bg=BUTTON_COLOR, fg="white"
-        )
-        self.save_button.grid(row=1, column=1, padx=5, pady=5)
+        self.clear_button = ttk.Button(control_frame, text="Clear", command=self.clear_grid)
+        self.clear_button.grid(row=0, column=1, padx=5, pady=5)
 
-        self.start_button = tk.Button(
-            root, text="Start", command=self.toggle_running, bg=BUTTON_COLOR, fg="white"
-        )
-        self.start_button.grid(row=1, column=2, padx=5, pady=5)
+        self.load_button = ttk.Button(control_frame, text="Load", command=self.load_data_from_file)
+        self.load_button.grid(row=0, column=2, padx=5, pady=5)
 
-        self.clear_button = tk.Button(
-            root, text="Clear", command=self.clear_grid, bg=BUTTON_COLOR, fg="white"
-        )
-        self.clear_button.grid(row=1, column=3, padx=5, pady=5)
+        self.save_button = ttk.Button(control_frame, text="Save", command=self.save_data_to_file)
+        self.save_button.grid(row=0, column=3, padx=5, pady=5)
+
+        self.rule_label = ttk.Label(control_frame, text="Rule:")
+        self.rule_label.grid(row=1, column=0, padx=5, pady=5)
+
+        self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in RULES])
+        self.rule_combobox.current(0)
+        self.rule_combobox.grid(row=1, column=1, padx=5, pady=5)
+        self.rule_combobox.bind("<<ComboboxSelected>>", self.chgit ange_rule)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -104,8 +123,10 @@ class GameOfLifeApp:
         self.canvas.delete("all")
         for x in range(WIDTH):
             for y in range(HEIGHT):
-                x1, y1 = x * CELL_SIZE, y * CELL_SIZE  # top left corner of the cell
-                x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE  # bottom right corner of the cell
+                x1 = (x * self.cell_size) + self.offset_x
+                y1 = (y * self.cell_size) + self.offset_y
+                x2 = x1 + self.cell_size
+                y2 = y1 + self.cell_size
                 color = "white" if grid[x, y] == 1 else BACKGROUND_COLOR
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
 
@@ -158,16 +179,47 @@ class GameOfLifeApp:
             self.root.after(1000 // FPS, self.game_loop)
 
     def left_click(self, event):
-        x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
+        x = (event.x - self.offset_x) // self.cell_size
+        y = (event.y - self.offset_y) // self.cell_size
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
             grid[x, y] = 1
         self.draw_grid()
 
     def right_click(self, event):
-        x, y = event.x // CELL_SIZE, event.y // CELL_SIZE
+        x = (event.x - self.offset_x) // self.cell_size
+        y = (event.y - self.offset_y) // self.cell_size
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
             grid[x, y] = 0
         self.draw_grid()
+
+
+    def zoom(self, event):
+        if event.delta > 0 and self.cell_size < MAX_CELL_SIZE:
+            self.cell_size += 1
+        elif event.delta < 0 and self.cell_size > MIN_CELL_SIZE:
+            self.cell_size -= 1
+        self.draw_grid()
+
+
+    def start_pan(self, event):
+        self.panning = True
+        self.last_mouse_x = event.x
+        self.last_mouse_y = event.y
+
+
+    def pan(self, event):
+        if self.last_mouse_x is not None and self.last_mouse_y is not None:
+            dx = event.x - self.last_mouse_x
+            dy = event.y - self.last_mouse_y
+            self.offset_x += dx
+            self.offset_y += dy
+        self.last_mouse_x = event.x
+        self.last_mouse_y = event.y
+        self.draw_grid()
+
+
+    def end_pan(self, event):
+        self.panning = False
 
     def load_data_from_file(self):
         global grid
