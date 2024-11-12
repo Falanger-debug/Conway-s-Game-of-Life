@@ -4,12 +4,52 @@ from tkinter import filedialog
 import numpy as np
 
 # Game settings
-WIDTH, HEIGHT = 60, 60
+WIDTH, HEIGHT = 250, 250
 CELL_SIZE = 10
-FPS = 100
+FPS = 1
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"
+
+# B: Birth, S: Survival, [Number of Neighbors]
+RULES = [
+    {
+        "name": "GAME_OF_LIFE",
+        "B": [3],
+        "S": [2, 3]
+    },
+    {
+        "name": "SEEDS",
+        "B": [2],
+        "S": []
+    },
+    {
+        "name": "LIFE_WITHOUT_DEATH",
+        "B": [3],
+        "S": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    },
+    {
+        "name": "CORAL",
+        "B": [3],
+        "S": [4, 5, 6, 7, 8]
+    },
+    {
+        "name": "AMOEBA",
+        "B": [3, 5, 7],
+        "S": [1, 3, 5, 8]
+    },
+    {
+        "name": "DAY_AND_NIGHT",
+        "B": [3, 6, 7, 8],
+        "S": [3, 4, 6, 7, 8]
+    },
+    {
+        "name": "LONG_LIFE",
+        "B": [3, 4, 5],
+        "S": [5]
+    }
+]
+RULE = RULES[0]
 
 # Colors
 BUTTON_COLOR = "blue"
@@ -25,7 +65,7 @@ running = False
 class GameOfLifeApp:
     def __init__(self, root):
         self.root = root  # main container for all the widgets
-        self.root.title("Conway's Game of Life")
+        self.root.title(RULE["name"])
 
         self.canvas = tk.Canvas(
             root, width=WIDTH * CELL_SIZE, height=HEIGHT * CELL_SIZE, bg=BACKGROUND_COLOR
@@ -69,15 +109,29 @@ class GameOfLifeApp:
                 color = "white" if grid[x, y] == 1 else BACKGROUND_COLOR
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
 
+    def count_neighbors(self, x, y):
+        neighbors = 0
+        for i in range(-1, 2):
+            if x + i < 0 or x + i >= WIDTH:
+                continue
+            for j in range(-1, 2):
+                if y + j < 0 or y + j >= HEIGHT:
+                    continue
+                if i == 0 and j == 0:
+                    continue
+                neighbors += grid[x + i, y + j]
+        return neighbors
+
+
     def update_grid(self):
         global grid
         new_grid = np.copy(grid)
         for x in range(WIDTH):
             for y in range(HEIGHT):
-                neighbors = np.sum(grid[x - 1: x + 2, y - 1: y + 2]) - grid[x, y]
-                if grid[x, y] == 1 and (neighbors < 2 or neighbors > 3):
+                neighbors = self.count_neighbors(x, y)
+                if grid[x, y] == 1 and (neighbors not in RULE["S"]):
                     new_grid[x, y] = 0
-                elif grid[x, y] == 0 and neighbors == 3:
+                elif grid[x, y] == 0 and neighbors in RULE["B"]:
                     new_grid[x, y] = 1
         grid = new_grid
         print("Grid updated")
