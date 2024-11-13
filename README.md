@@ -9,6 +9,9 @@ This project is an interactive implementation of **Conway's Game of Live**, buil
 6. [Configuration](#configuration)
 7. [Contribution](#contributing)
 8. [License](#license)
+
+https://github.com/user-attachments/assets/00109c2d-9c0d-4b4e-8423-e7c6cd7b0874
+
 ### Overview
 Conway's Game of Life is a zero-player game where cells on a grid live, die, or evolve based on simple rules. This application provides a user-friendly interface to:
 - Set initial cell states
