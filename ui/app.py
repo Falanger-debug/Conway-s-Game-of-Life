@@ -3,6 +3,7 @@ from tkinter import filedialog, ttk
 import numpy as np
 
 from settings import *
+from ui.file_operations import *
 
 running = False
 
@@ -62,7 +63,7 @@ class GameOfLifeApp:
         self.clear_button = ttk.Button(control_frame, text="Clear", command=self.clear_grid)
         self.clear_button.grid(row=0, column=1, padx=5, pady=5)
 
-        self.load_button = ttk.Button(control_frame, text="Load", command=self.load_data_from_file)
+        self.load_button = ttk.Button(control_frame, text="Load", command=lambda: load_data_from_file(self))
         self.load_button.grid(row=0, column=2, padx=5, pady=5)
 
         self.save_button = ttk.Button(control_frame, text="Save", command=self.save_data_to_file)
@@ -189,24 +190,24 @@ class GameOfLifeApp:
     def end_pan(self):
         self.panning = False
 
-    def load_data_from_file(self):
-        global grid
-        file_path = filedialog.askopenfilename(
-            title="Select a file", filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
-        )
-        if file_path:
-            try:
-                with open(file_path, "r") as f:
-                    for line in f:
-                        x, y = map(int, line.strip().split(","))
-                        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-                            grid[x, y] = 1
-                print("Data loaded successfully from:", file_path)
-            except FileNotFoundError:
-                print("File not found")
-            except ValueError:
-                print("Invalid data format")
-        self.draw_grid()
+    # def load_data_from_file(self):
+    #     global grid
+    #     file_path = filedialog.askopenfilename(
+    #         title="Select a file", filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
+    #     )
+    #     if file_path:
+    #         try:
+    #             with open(file_path, "r") as f:
+    #                 for line in f:
+    #                     x, y = map(int, line.strip().split(","))
+    #                     if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+    #                         grid[x, y] = 1
+    #             print("Data loaded successfully from:", file_path)
+    #         except FileNotFoundError:
+    #             print("File not found")
+    #         except ValueError:
+    #             print("Invalid data format")
+    #     self.draw_grid()
 
     def save_data_to_file(self):
         file_path = filedialog.asksaveasfilename(
