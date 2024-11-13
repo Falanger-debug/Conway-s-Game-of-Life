@@ -9,7 +9,7 @@ This project is an interactive implementation of **Conway's Game of Live**, buil
 6. [Configuration](#configuration)
 7. [Contribution](#contributing)
 8. [License](#license)
-
+https://github.com/user-attachments/assets/91fed207-8489-4a21-9102-7580a9784747
 https://github.com/user-attachments/assets/00109c2d-9c0d-4b4e-8423-e7c6cd7b0874
 
 ### Overview
