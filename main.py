@@ -1,46 +1,63 @@
 import tkinter as tk
-from tkinter import filedialog, ttk
-
+from tkinter import ttk, filedialog
 import numpy as np
-
-# Game settings
-WIDTH, HEIGHT = 150, 100
-CELL_SIZE = 10
-MIN_CELL_SIZE = 2
-MAX_CELL_SIZE = 50
-FPS = 10
-FULLSCREEN = True
-
-# Default directory for file dialog
-INITIAL_DIR = "./data_points"
-
-# B: Birth, S: Survival, [Number of Neighbors]
-RULES = [
-    {"name": "GAME_OF_LIFE","B": [3],"S": [2, 3]},
-    {"name": "SEEDS","B": [2],"S": []},
-    {"name": "LIFE_WITHOUT_DEATH","B": [3],"S": [0, 1, 2, 3, 4, 5, 6, 7, 8]},
-    {"name": "CORAL","B": [3],"S": [4, 5, 6, 7, 8]},
-    {"name": "AMOEBA","B": [3, 5, 7],"S": [1, 3, 5, 8]},
-    {"name": "DAY_AND_NIGHT","B": [3, 6, 7, 8],"S": [3, 4, 6, 7, 8]},
-    {"name": "LONG_LIFE","B": [3, 4, 5],"S": [5]}
-]
-RULE = RULES[0]
-
-# Colors
-BUTTON_COLOR = "#6272a4"
-BUTTON_HOVER_COLOR = "#bd93f9"
-GRID_COLOR = "#44475a"
-LIVE_CELL_COLOR = "#50fa7b"
-BACKGROUND_COLOR = "#282a36"
+import settings
+from settings import *
 
 # Grid data
 grid = np.zeros((WIDTH, HEIGHT), dtype=int)
 running = False
+fps = settings.FPS
+
+def save_data_to_file():
+    file_path = filedialog.asksaveasfilename(
+        title="Save as", defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
+    )
+    if file_path:
+        try:
+            with open(file_path, "w") as f:
+                for x in range(WIDTH):
+                    for y in range(HEIGHT):
+                        if grid[x, y] == 1:
+                            f.write(f"{x},{y}\n")
+            print("Data saved successfully to:", file_path)
+        except FileNotFoundError:
+            print("File not found")
+        except Exception as e:
+            print("Error saving file:", e)
+
+
+def count_neighbors(x, y):
+    neighbors = 0
+    for i in range(-1, 2):
+        if x + i < 0 or x + i >= WIDTH:
+            continue
+        for j in range(-1, 2):
+            if y + j < 0 or y + j >= HEIGHT:
+                continue
+            if i == 0 and j == 0:
+                continue
+            neighbors += grid[x + i, y + j]
+    return neighbors
+
+
+def update_grid():
+    global grid
+    new_grid = np.copy(grid)
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            neighbors = count_neighbors(x, y)
+            if grid[x, y] == 1 and (neighbors not in settings.RULE["S"]):
+                new_grid[x, y] = 0
+            elif grid[x, y] == 0 and neighbors in settings.RULE["B"]:
+                new_grid[x, y] = 1
+    grid = new_grid
 
 
 class GameOfLifeApp:
-    def __init__(self, root):
-        self.root = root  # main container for all the widgets
+    def __init__(self, main_root):
+        self.root = main_root  # main container for all the widgets
         self.root.title("Conway's Game of Life")
         self.root.attributes("-fullscreen", True) if FULLSCREEN else self.root.geometry("1080x720")
         self.root.configure(bg=BACKGROUND_COLOR)
@@ -59,7 +76,7 @@ class GameOfLifeApp:
         self.panning = False
 
         self.canvas = tk.Canvas(
-            root, bg=BACKGROUND_COLOR, highlightthickness=0
+            main_root, bg=BACKGROUND_COLOR, highlightthickness=0
         )
         self.canvas.grid(row=0, column=0, columnspan=5, padx=10, pady=10,
                          sticky="nsew")
@@ -74,7 +91,7 @@ class GameOfLifeApp:
         self.last_mouse_y = None
 
         # Control panel
-        control_frame = ttk.LabelFrame(root, text="Controls", padding=(10, 10))
+        control_frame = ttk.LabelFrame(main_root, text="Controls", padding=(10, 10))
         control_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
 
         # Configure row and column weights to make them expandable
@@ -92,31 +109,61 @@ class GameOfLifeApp:
         self.load_button = ttk.Button(control_frame, text="Load", command=self.load_data_from_file)
         self.load_button.grid(row=0, column=2, padx=5, pady=5)
 
-        self.save_button = ttk.Button(control_frame, text="Save", command=self.save_data_to_file)
+        self.save_button = ttk.Button(control_frame, text="Save", command=save_data_to_file)
         self.save_button.grid(row=0, column=3, padx=5, pady=5)
 
         self.rule_label = ttk.Label(control_frame, text="Rule:")
         self.rule_label.grid(row=0, column=4, padx=5, pady=5)
 
-        self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in RULES])
+        self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in settings.RULES])
         self.rule_combobox.current(0)
         self.rule_combobox.grid(row=0, column=5, padx=5, pady=5)
         self.rule_combobox.bind("<<ComboboxSelected>>", self.change_rule)
+
+        # FPS Selection
+        self.fps_label = ttk.Label(control_frame, text="FPS:")
+        self.fps_label.grid(row=0, column=6, padx=5, pady=5)
+
+        self.fps_combobox = ttk.Combobox(control_frame, values=["5", "10", "15", "20", "30", "60"])
+        self.fps_combobox.set(FPS)
+        self.fps_combobox.grid(row=0, column=7, padx=5, pady=5)
+        self.fps_combobox.bind("<<ComboboxSelected>>", self.change_fps)
+
+
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Game loop
         self.draw_grid()
 
-    def resize_canvas(self, event=None):
-        self.canvas.config(width=self.root.winfo_width() - 20, height=self.root.winfo_height() - 160)
+    def load_data_from_file(self):
+        global grid
+        file_path = filedialog.askopenfilename(
+            title="Select a file", filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
+        )
+        if file_path:
+            try:
+                with open(file_path, "r") as f:
+                    for line in f:
+                        x, y = map(int, line.strip().split(","))
+                        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+                            grid[x, y] = 1
+                print("Data loaded successfully from:", file_path)
+            except FileNotFoundError:
+                print("File not found")
+            except ValueError:
+                print("Invalid data format")
         self.draw_grid()
+
+    def game_loop(self):
+        if running:
+            update_grid()
+        self.draw_grid()
+        self.root.after(1000 // FPS, self.game_loop)
 
     def draw_grid(self):
         self.canvas.delete("all")
         global running
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
         for x in range(WIDTH):
             for y in range(HEIGHT):
                 x1 = (x * self.cell_size) + self.offset_x
@@ -126,44 +173,14 @@ class GameOfLifeApp:
                 color = LIVE_CELL_COLOR if grid[x, y] == 1 else BACKGROUND_COLOR
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
 
-    def change_rule(self, event):
-        global RULE
+    def resize_canvas(self):
+        self.canvas.config(width=self.root.winfo_width() - 20, height=self.root.winfo_height() - 160)
+        self.draw_grid()
+
+    def change_rule(self, _):
         selected_rule = self.rule_combobox.get()
-        RULE = next(rule for rule in RULES if rule["name"] == selected_rule)
+        settings.RULE = next(rule for rule in settings.RULES if rule["name"] == selected_rule)
         self.draw_grid()
-
-
-    def count_neighbors(self, x, y):
-        neighbors = 0
-        for i in range(-1, 2):
-            if x + i < 0 or x + i >= WIDTH:
-                continue
-            for j in range(-1, 2):
-                if y + j < 0 or y + j >= HEIGHT:
-                    continue
-                if i == 0 and j == 0:
-                    continue
-                neighbors += grid[x + i, y + j]
-        return neighbors
-
-
-    def update_grid(self):
-        global grid
-        new_grid = np.copy(grid)
-        for x in range(WIDTH):
-            for y in range(HEIGHT):
-                neighbors = self.count_neighbors(x, y)
-                if grid[x, y] == 1 and (neighbors not in RULE["S"]):
-                    new_grid[x, y] = 0
-                elif grid[x, y] == 0 and neighbors in RULE["B"]:
-                    new_grid[x, y] = 1
-        grid = new_grid
-
-    def game_loop(self):
-        if running:
-            self.update_grid()
-        self.draw_grid()
-        self.root.after(1000 // FPS, self.game_loop)
 
     def toggle_running(self):
         global running
@@ -214,45 +231,8 @@ class GameOfLifeApp:
         self.last_mouse_y = event.y
         self.draw_grid()
 
-    def end_pan(self, event):
+    def end_pan(self, _):
         self.panning = False
-
-    def load_data_from_file(self):
-        global grid
-        file_path = filedialog.askopenfilename(
-            title="Select a file", filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
-        )
-        if file_path:
-            try:
-                with open(file_path, "r") as f:
-                    for line in f:
-                        x, y = map(int, line.strip().split(","))
-                        if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-                            grid[x, y] = 1
-                print("Data loaded successfully from:", file_path)
-            except FileNotFoundError:
-                print("File not found")
-            except ValueError:
-                print("Invalid data format")
-        self.draw_grid()
-
-    def save_data_to_file(self):
-        file_path = filedialog.asksaveasfilename(
-            title="Save as", defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")], initialdir=INITIAL_DIR
-        )
-        if file_path:
-            try:
-                with open(file_path, "w") as f:
-                    for x in range(WIDTH):
-                        for y in range(HEIGHT):
-                            if grid[x, y] == 1:
-                                f.write(f"{x},{y}\n")
-                print("Data saved successfully to:", file_path)
-            except FileNotFoundError:
-                print("File not found")
-            except Exception as e:
-                print("Error saving file:", e)
 
     def clear_grid(self):
         if running:
@@ -264,6 +244,11 @@ class GameOfLifeApp:
     def on_closing(self):
         self.root.destroy()
 
+    def change_fps(self, _):
+        global fps
+        fps = int(self.fps_combobox.get())
+        if running:
+            self.root.after(1000 // fps, self.game_loop)
 
 if __name__ == "__main__":
     root = tk.Tk()
