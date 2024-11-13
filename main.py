@@ -8,6 +8,7 @@ from settings import *
 
 # Grid data
 grid = np.zeros((WIDTH, HEIGHT), dtype=int)
+active_cells = set()
 running = False
 fps = settings.FPS
 
@@ -45,16 +46,34 @@ def count_neighbors(x, y):
 
 
 def update_grid():
-    global grid
+    global grid, active_cells
     new_grid = np.copy(grid)
-    for x in range(WIDTH):
-        for y in range(HEIGHT):
-            neighbors = count_neighbors(x, y)
-            if grid[x, y] == 1 and (neighbors not in settings.RULE["S"]):
+    new_active_cells = set()
+    to_check = active_cells.copy()
+
+    for (x, y) in active_cells:
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if not (i == 0 and j == 0):
+                    new_x, new_y = x + i, y + j
+                    if 0 <= new_x < WIDTH and 0 <= new_y < HEIGHT:
+                        to_check.add((new_x, new_y))
+
+    for (x, y) in to_check:
+        neighbors = count_neighbors(x, y)
+
+        if grid[x, y] == 1:
+            if neighbors not in settings.RULE["S"]:
                 new_grid[x, y] = 0
-            elif grid[x, y] == 0 and neighbors in settings.RULE["B"]:
+            else:
+                new_active_cells.add((x, y))
+        else:
+            if neighbors in settings.RULE["B"]:
                 new_grid[x, y] = 1
+                new_active_cells.add((x, y))
+
     grid = new_grid
+    active_cells = new_active_cells
 
 
 class GameOfLifeApp:
@@ -149,6 +168,7 @@ class GameOfLifeApp:
                         x, y = map(int, line.strip().split(","))
                         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
                             grid[x, y] = 1
+                            active_cells.add((x, y))
                 print("Data loaded successfully from:", file_path)
             except FileNotFoundError:
                 print("File not found")
@@ -157,11 +177,6 @@ class GameOfLifeApp:
         self.draw_grid()
 
     def game_loop(self):
-        current_time = time.time()
-        elapsed_time = current_time - time.time()
-
-        # if elapsed_time >= (1 / fps):
-        #     self.last_time = current_time
         if running:
             update_grid()
         self.draw_grid()
@@ -173,16 +188,15 @@ class GameOfLifeApp:
 
     def draw_grid(self):
         self.canvas.delete("all")
-        print("fps", fps)
         global running
-        for x in range(WIDTH):
-            for y in range(HEIGHT):
-                x1 = (x * self.cell_size) + self.offset_x
-                y1 = (y * self.cell_size) + self.offset_y
-                x2 = x1 + self.cell_size
-                y2 = y1 + self.cell_size
-                color = LIVE_CELL_COLOR if grid[x, y] == 1 else BACKGROUND_COLOR
-                self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
+
+        for (x, y) in active_cells:
+            x1 = (x * self.cell_size) + self.offset_x
+            y1 = (y * self.cell_size) + self.offset_y
+            x2 = x1 + self.cell_size
+            y2 = y1 + self.cell_size
+            color = LIVE_CELL_COLOR if grid[x, y] == 1 else BACKGROUND_COLOR
+            self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
 
     def resize_canvas(self):
         self.canvas.config(width=self.root.winfo_width() - 20, height=self.root.winfo_height() - 160)
