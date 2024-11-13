@@ -4,12 +4,12 @@ from tkinter import filedialog, ttk
 import numpy as np
 
 # Game settings
-WIDTH, HEIGHT = 100, 100
+WIDTH, HEIGHT = 150, 100
 CELL_SIZE = 10
 MIN_CELL_SIZE = 2
 MAX_CELL_SIZE = 50
 FPS = 10
-FULLSCREEN = False
+FULLSCREEN = True
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"
@@ -17,36 +17,12 @@ INITIAL_DIR = "./data_points"
 # B: Birth, S: Survival, [Number of Neighbors]
 RULES = [
     {"name": "GAME_OF_LIFE","B": [3],"S": [2, 3]},
-    {
-        "name": "SEEDS",
-        "B": [2],
-        "S": []
-    },
-    {
-        "name": "LIFE_WITHOUT_DEATH",
-        "B": [3],
-        "S": [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    },
-    {
-        "name": "CORAL",
-        "B": [3],
-        "S": [4, 5, 6, 7, 8]
-    },
-    {
-        "name": "AMOEBA",
-        "B": [3, 5, 7],
-        "S": [1, 3, 5, 8]
-    },
-    {
-        "name": "DAY_AND_NIGHT",
-        "B": [3, 6, 7, 8],
-        "S": [3, 4, 6, 7, 8]
-    },
-    {
-        "name": "LONG_LIFE",
-        "B": [3, 4, 5],
-        "S": [5]
-    }
+    {"name": "SEEDS","B": [2],"S": []},
+    {"name": "LIFE_WITHOUT_DEATH","B": [3],"S": [0, 1, 2, 3, 4, 5, 6, 7, 8]},
+    {"name": "CORAL","B": [3],"S": [4, 5, 6, 7, 8]},
+    {"name": "AMOEBA","B": [3, 5, 7],"S": [1, 3, 5, 8]},
+    {"name": "DAY_AND_NIGHT","B": [3, 6, 7, 8],"S": [3, 4, 6, 7, 8]},
+    {"name": "LONG_LIFE","B": [3, 4, 5],"S": [5]}
 ]
 RULE = RULES[0]
 
@@ -83,9 +59,10 @@ class GameOfLifeApp:
         self.panning = False
 
         self.canvas = tk.Canvas(
-            root, width=1100, height=750, bg=BACKGROUND_COLOR, highlightthickness=0
+            root, bg=BACKGROUND_COLOR, highlightthickness=0
         )
-        self.canvas.grid(row=0, column=0, columnspan=5, padx=10, pady=10)
+        self.canvas.grid(row=0, column=0, columnspan=5, padx=10, pady=10,
+                         sticky="nsew")
         self.canvas.bind("<ButtonPress-1>", self.start_pan)
         self.canvas.bind("<B1-Motion>", self.pan)
         self.canvas.bind("<ButtonRelease-1>", self.end_pan)
