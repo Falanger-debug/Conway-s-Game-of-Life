@@ -138,7 +138,30 @@ class GameOfLifeApp:
                 neighbors += grid[x + i, y + j]
         return neighbors
 
+    def update_cell(self, x, y, state):
+        x1 = (x * self.cell_size) + self.offset_x
+        y1 = (y * self.cell_size) + self.offset_y
+        x2 = x1 + self.cell_size
+        y2 = y1 + self.cell_size
+        color = LIVE_CELL_COLOR if state == 1 else BACKGROUND_COLOR
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
+
     def update_grid(self):
+        # global grid
+        # neighbors_count = (
+        #         np.roll(grid, 1, axis=0) +
+        #         np.roll(grid, -1, axis=0) +
+        #         np.roll(grid, 1, axis=1) +
+        #         np.roll(grid, -1, axis=1) +
+        #         np.roll(np.roll(grid, 1, axis=0), 1, axis=1) +
+        #         np.roll(np.roll(grid, 1, axis=0), -1, axis=1) +
+        #         np.roll(np.roll(grid, -1, axis=0), 1, axis=1) +
+        #         np.roll(np.roll(grid, -1, axis=0), -1, axis=1)
+        # )
+        # birth = np.isin(neighbors_count, RULE["B"])
+        # survival = np.isin(neighbors_count, RULE["S"]) & (grid == 1)
+        #
+        # grid[:] = (birth | survival).astype(int)
         global grid
         new_grid = np.copy(grid)
         for x in range(WIDTH):
@@ -149,12 +172,9 @@ class GameOfLifeApp:
                 elif grid[x, y] == 0 and neighbors in RULE["B"]:
                     new_grid[x, y] = 1
         grid = new_grid
-        print(f"RULE: {RULE['name']}")
-        print("Grid updated")
 
     def game_loop(self):
         if running:
-            print("Game loop running")
             self.update_grid()
         self.draw_grid()
         self.root.after(1000 // FPS, self.game_loop)
@@ -178,7 +198,7 @@ class GameOfLifeApp:
         y = (event.y - self.offset_y) // self.cell_size
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
             grid[x, y] = 1
-        self.draw_grid()
+        self.update_cell(x, y, grid[x, y])
 
     def right_click(self, event):
         x = (event.x - self.offset_x) // self.cell_size
