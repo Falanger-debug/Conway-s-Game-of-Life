@@ -67,6 +67,6 @@ Settings can be adjusted via the ```settings.py``` file
 3. Make changes, commit them and push to your fork.
 4. Open a pull request with a clear description of your changes.
 ## License
-This project is licensed under the MIT License. See LICENSE for details.
+This project is licensed under the MIT License.
    
 
