@@ -80,6 +80,8 @@ class GameOfLifeApp:
     def __init__(self, main_root):
         self.root = main_root  # main container for all the widgets
         self.root.title("Conway's Game of Life")
+        self.old_active_cells = set()
+
         self.root.attributes("-fullscreen", True) if FULLSCREEN else self.root.geometry("1080x720")
         self.root.configure(bg=BACKGROUND_COLOR)
 
@@ -195,8 +197,18 @@ class GameOfLifeApp:
             y1 = (y * self.cell_size) + self.offset_y
             x2 = x1 + self.cell_size
             y2 = y1 + self.cell_size
-            color = LIVE_CELL_COLOR if grid[x, y] == 1 else BACKGROUND_COLOR
-            self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
+            self.canvas.create_rectangle(
+                x1, y1, x2, y2, outline=GRID_COLOR, fill=LIVE_CELL_COLOR, tags="cells"
+            )
+
+        for (x, y) in self.old_active_cells - active_cells:
+            x1 = (x * self.cell_size) + self.offset_x
+            y1 = (y * self.cell_size) + self.offset_y
+            x2 = x1 + self.cell_size
+            y2 = y1 + self.cell_size
+            self.canvas.create_rectangle(
+                x1, y1, x2, y2, outline=GRID_COLOR, fill=BACKGROUND_COLOR, tags="cells"
+            )
 
     def resize_canvas(self):
         self.canvas.config(width=self.root.winfo_width() - 20, height=self.root.winfo_height() - 160)
@@ -264,6 +276,8 @@ class GameOfLifeApp:
             return
         global grid
         grid = np.zeros((WIDTH, HEIGHT), dtype=int)
+        active_cells.clear()
+        self.old_active_cells.clear()
         self.draw_grid()
 
     def on_closing(self):
