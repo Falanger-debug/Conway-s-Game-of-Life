@@ -8,48 +8,20 @@ WIDTH, HEIGHT = 100, 100
 CELL_SIZE = 10
 MIN_CELL_SIZE = 2
 MAX_CELL_SIZE = 50
-FPS = 10
+FPS = 25
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"
 
 # B: Birth, S: Survival, [Number of Neighbors]
 RULES = [
-    {
-        "name": "GAME_OF_LIFE",
-        "B": [3],
-        "S": [2, 3]
-    },
-    {
-        "name": "SEEDS",
-        "B": [2],
-        "S": []
-    },
-    {
-        "name": "LIFE_WITHOUT_DEATH",
-        "B": [3],
-        "S": [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    },
-    {
-        "name": "CORAL",
-        "B": [3],
-        "S": [4, 5, 6, 7, 8]
-    },
-    {
-        "name": "AMOEBA",
-        "B": [3, 5, 7],
-        "S": [1, 3, 5, 8]
-    },
-    {
-        "name": "DAY_AND_NIGHT",
-        "B": [3, 6, 7, 8],
-        "S": [3, 4, 6, 7, 8]
-    },
-    {
-        "name": "LONG_LIFE",
-        "B": [3, 4, 5],
-        "S": [5]
-    }
+    {"name": "GAME_OF_LIFE", "B": [3], "S": [2, 3]},
+    {"name": "SEEDS","B": [2],"S": []},
+    {"name": "LIFE_WITHOUT_DEATH","B": [3],"S": [0, 1, 2, 3, 4, 5, 6, 7, 8]},
+    {"name": "CORAL","B": [3],"S": [4, 5, 6, 7, 8]},
+    {"name": "AMOEBA","B": [3, 5, 7],"S": [1, 3, 5, 8]},
+    {"name": "DAY_AND_NIGHT","B": [3, 6, 7, 8],"S": [3, 4, 6, 7, 8]},
+    {"name": "LONG_LIFE","B": [3, 4, 5],"S": [5]}
 ]
 RULE = RULES[0]
 
@@ -74,8 +46,13 @@ class GameOfLifeApp:
         # Apply ttk style
         style = ttk.Style()
         style.theme_use('clam')
-        style.configure("TButton", background=[("active", BUTTON_HOVER_COLOR)], foreground="white", relief="flat", font=('Helvetica', 10, 'bold'))
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("TFrame", background=BACKGROUND_COLOR)
+        style.configure("TLabel", background=BACKGROUND_COLOR, foreground="white")
+        style.configure("TButton", background=BUTTON_COLOR, foreground="white", font=('Helvetica', 10, 'bold'))
         style.map("TButton", background=[("active", BUTTON_HOVER_COLOR)])
+
         # Zoom level
         self.cell_size = CELL_SIZE
         self.offset_x = 0
@@ -116,15 +93,19 @@ class GameOfLifeApp:
         self.rule_label = ttk.Label(control_frame, text="Rule:")
         self.rule_label.grid(row=1, column=0, padx=5, pady=5)
 
-        self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in RULES])
+        self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in RULES], state='readonly')
         self.rule_combobox.current(0)
         self.rule_combobox.grid(row=1, column=1, padx=5, pady=5)
         self.rule_combobox.bind("<<ComboboxSelected>>", self.change_rule)
+
+        self.status = ttk.Label(root, text="Ready", anchor='w')
+        self.status.grid(row=2, column=0, columnspan=4, sticky="ew")
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Game loop
         self.draw_grid()
+        self.root.after(1000 // FPS, self.game_loop)
 
     def draw_grid(self):
         self.canvas.delete("all")
