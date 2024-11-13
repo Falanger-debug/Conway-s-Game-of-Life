@@ -1,9 +1,9 @@
 # Game settings
-WIDTH, HEIGHT = 101, 100
+WIDTH, HEIGHT = 150, 100
 CELL_SIZE = 10
 MIN_CELL_SIZE = 2
 MAX_CELL_SIZE = 50
-FPS = 100
+FPS = 15
 FULLSCREEN = True
 
 # Default directory for file dialog
