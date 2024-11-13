@@ -9,6 +9,8 @@ This project is an interactive implementation of **Conway's Game of Live**, buil
 6. [Configuration](#configuration)
 7. [Contribution](#contributing)
 8. [License](#license)
+
+   
 ![game_of_life_quite_short-ezgif com-speed](https://github.com/user-attachments/assets/bff8b7f6-b2cc-46a4-872d-18ec80a4cd16)
 
 
