@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 import numpy as np
+from pygments.styles.dracula import background
 
 # Game settings
 WIDTH, HEIGHT = 100, 100
@@ -68,6 +69,12 @@ class GameOfLifeApp:
     def __init__(self, root):
         self.root = root  # main container for all the widgets
         self.root.title(RULE["name"])
+        self.root.configure(bg=BACKGROUND_COLOR)
+
+        # Apply ttk style
+        style = ttk.Style()
+        style.configure("TButton", padding=6, relief="flat")
+        style.map("TButton", background=[("active", BUTTON_HOVER_COLOR)], foreground=[("active", "white")])
 
         # Zoom level
         self.cell_size = CELL_SIZE
@@ -78,7 +85,7 @@ class GameOfLifeApp:
         self.canvas = tk.Canvas(
             root, width=1200, height=600, bg=BACKGROUND_COLOR
         )
-        self.canvas.grid(row=0, column=0, columnspan=3)
+        self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
         self.canvas.bind("<ButtonPress-1>", self.start_pan)
         self.canvas.bind("<B1-Motion>", self.pan)
         self.canvas.bind("<ButtonRelease-1>", self.end_pan)
@@ -112,7 +119,7 @@ class GameOfLifeApp:
         self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in RULES])
         self.rule_combobox.current(0)
         self.rule_combobox.grid(row=1, column=1, padx=5, pady=5)
-        self.rule_combobox.bind("<<ComboboxSelected>>", self.chgit ange_rule)
+        self.rule_combobox.bind("<<ComboboxSelected>>", self.change_rule)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -130,6 +137,13 @@ class GameOfLifeApp:
                 color = "white" if grid[x, y] == 1 else BACKGROUND_COLOR
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline=GRID_COLOR, fill=color)
 
+    def change_rule(self, event):
+        global RULE
+        selected_rule = self.rule_combobox.get()
+        RULE = next(rule for rule in RULES if rule["name"] == selected_rule)
+        self.draw_grid()
+
+
     def count_neighbors(self, x, y):
         neighbors = 0
         for i in range(-1, 2):
@@ -142,7 +156,6 @@ class GameOfLifeApp:
                     continue
                 neighbors += grid[x + i, y + j]
         return neighbors
-
 
     def update_grid(self):
         global grid
@@ -167,7 +180,7 @@ class GameOfLifeApp:
     def toggle_running(self):
         global running
         running = not running
-        self.start_button.config(text="Pause" if running else "Start", bg=BUTTON_COLOR)
+        self.start_button.config(text="Pause" if running else "Start")
 
         state = "disabled" if running else "normal"
         self.load_button.config(state=state)
@@ -192,7 +205,6 @@ class GameOfLifeApp:
             grid[x, y] = 0
         self.draw_grid()
 
-
     def zoom(self, event):
         if event.delta > 0 and self.cell_size < MAX_CELL_SIZE:
             self.cell_size += 1
@@ -200,12 +212,10 @@ class GameOfLifeApp:
             self.cell_size -= 1
         self.draw_grid()
 
-
     def start_pan(self, event):
         self.panning = True
         self.last_mouse_x = event.x
         self.last_mouse_y = event.y
-
 
     def pan(self, event):
         if self.last_mouse_x is not None and self.last_mouse_y is not None:
@@ -216,7 +226,6 @@ class GameOfLifeApp:
         self.last_mouse_x = event.x
         self.last_mouse_y = event.y
         self.draw_grid()
-
 
     def end_pan(self, event):
         self.panning = False
