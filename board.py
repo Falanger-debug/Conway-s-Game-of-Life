@@ -2,14 +2,13 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 import numpy as np
-from pygments.styles.dracula import background
 
 # Game settings
 WIDTH, HEIGHT = 100, 100
 CELL_SIZE = 10
 MIN_CELL_SIZE = 2
 MAX_CELL_SIZE = 50
-FPS = 1
+FPS = 10
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"
@@ -55,10 +54,11 @@ RULES = [
 RULE = RULES[0]
 
 # Colors
-BUTTON_COLOR = "blue"
-BUTTON_HOVER_COLOR = "dark blue"
-GRID_COLOR = "#D4C9AB"
-BACKGROUND_COLOR = "black"
+BUTTON_COLOR = "#6272a4"
+BUTTON_HOVER_COLOR = "#bd93f9"
+GRID_COLOR = "#44475a"
+LIVE_CELL_COLOR = "#50fa7b"
+BACKGROUND_COLOR = "#282a36"
 
 # Grid data
 grid = np.zeros((WIDTH, HEIGHT), dtype=int)
@@ -73,9 +73,9 @@ class GameOfLifeApp:
 
         # Apply ttk style
         style = ttk.Style()
-        style.configure("TButton", padding=6, relief="flat")
-        style.map("TButton", background=[("active", BUTTON_HOVER_COLOR)], foreground=[("active", "white")])
-
+        style.theme_use('clam')
+        style.configure("TButton", background=[("active", BUTTON_HOVER_COLOR)], foreground="white", relief="flat", font=('Helvetica', 10, 'bold'))
+        style.map("TButton", background=[("active", BUTTON_HOVER_COLOR)])
         # Zoom level
         self.cell_size = CELL_SIZE
         self.offset_x = 0
@@ -83,7 +83,7 @@ class GameOfLifeApp:
         self.panning = False
 
         self.canvas = tk.Canvas(
-            root, width=1200, height=600, bg=BACKGROUND_COLOR
+            root, width=800, height=600, bg=BACKGROUND_COLOR, highlightthickness=0
         )
         self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
         self.canvas.bind("<ButtonPress-1>", self.start_pan)
@@ -168,6 +168,7 @@ class GameOfLifeApp:
                 elif grid[x, y] == 0 and neighbors in RULE["B"]:
                     new_grid[x, y] = 1
         grid = new_grid
+        print(f"RULE: {RULE['name']}")
         print("Grid updated")
 
     def game_loop(self):
