@@ -156,6 +156,7 @@ class GameOfLifeApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Game loop
+        self.draw_static_grid()
         self.draw_grid()
 
     def load_data_from_file(self):
@@ -188,8 +189,26 @@ class GameOfLifeApp:
 
         self.root.after(1000 // fps, self.game_loop)
 
+    def draw_static_grid(self):
+
+        self.canvas.delete("gridlines")
+
+        start_x = -self.offset_x % self.cell_size
+        start_y = -self.offset_y % self.cell_size
+
+        for x in range(start_x, WIDTH * self.cell_size, self.cell_size):
+            self.canvas.create_line(
+                x, 0, x, HEIGHT * self.cell_size,
+                fill=GRID_COLOR, tags="gridlines"
+            )
+        for y in range(start_y, HEIGHT * self.cell_size, self.cell_size):
+            self.canvas.create_line(
+                0, y, WIDTH * self.cell_size, y,
+                fill=GRID_COLOR, tags="gridlines"
+            )
+
     def draw_grid(self):
-        self.canvas.delete("all")
+        self.canvas.delete("cells")
         global running
 
         for (x, y) in active_cells:
@@ -237,6 +256,7 @@ class GameOfLifeApp:
         y = (event.y - self.offset_y) // self.cell_size
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
             grid[x, y] = 1
+            active_cells.add((x, y))
         self.draw_grid()
 
     def right_click(self, event):
@@ -244,6 +264,7 @@ class GameOfLifeApp:
         y = (event.y - self.offset_y) // self.cell_size
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
             grid[x, y] = 0
+            active_cells.discard((x, y))
         self.draw_grid()
 
     def zoom(self, event):
@@ -251,6 +272,8 @@ class GameOfLifeApp:
             self.cell_size += 1
         elif event.delta < 0 and self.cell_size > MIN_CELL_SIZE:
             self.cell_size -= 1
+
+        self.draw_static_grid()
         self.draw_grid()
 
     def start_pan(self, event):
@@ -264,8 +287,11 @@ class GameOfLifeApp:
             dy = event.y - self.last_mouse_y
             self.offset_x += dx
             self.offset_y += dy
+
         self.last_mouse_x = event.x
         self.last_mouse_y = event.y
+
+        self.draw_static_grid()
         self.draw_grid()
 
     def end_pan(self, _):
