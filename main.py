@@ -74,6 +74,7 @@ class GameOfLifeApp:
         self.offset_x = 0
         self.offset_y = 0
         self.panning = False
+        self.game_loop_id = None
 
         self.canvas = tk.Canvas(
             main_root, bg=BACKGROUND_COLOR, highlightthickness=0
@@ -124,7 +125,7 @@ class GameOfLifeApp:
         self.fps_label = ttk.Label(control_frame, text="FPS:")
         self.fps_label.grid(row=0, column=6, padx=5, pady=5)
 
-        self.fps_combobox = ttk.Combobox(control_frame, values=["5", "10", "15", "20", "30", "60"])
+        self.fps_combobox = ttk.Combobox(control_frame, values=["5", "10", "15", "20", "30", "60", "100"])
         self.fps_combobox.set(FPS)
         self.fps_combobox.grid(row=0, column=7, padx=5, pady=5)
         self.fps_combobox.bind("<<ComboboxSelected>>", self.change_fps)
@@ -159,10 +160,15 @@ class GameOfLifeApp:
         if running:
             update_grid()
         self.draw_grid()
-        self.root.after(1000 // FPS, self.game_loop)
+
+        if self.game_loop_id is not None:
+            self.root.after_cancel(self.game_loop_id)
+
+        self.root.after(1000 // fps, self.game_loop)
 
     def draw_grid(self):
         self.canvas.delete("all")
+        print("fps", fps)
         global running
         for x in range(WIDTH):
             for y in range(HEIGHT):
@@ -247,8 +253,9 @@ class GameOfLifeApp:
     def change_fps(self, _):
         global fps
         fps = int(self.fps_combobox.get())
+
         if running:
-            self.root.after(1000 // fps, self.game_loop)
+            self.game_loop()
 
 if __name__ == "__main__":
     root = tk.Tk()
