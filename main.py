@@ -193,8 +193,8 @@ class GameOfLifeApp:
 
         self.canvas.delete("gridlines")
 
-        start_x = -self.offset_x % self.cell_size
-        start_y = -self.offset_y % self.cell_size
+        start_x = -self.offset_x % self.cell_size + abs(self.offset_x)
+        start_y = -self.offset_y % self.cell_size + abs(self.offset_y)
 
         for x in range(start_x, WIDTH * self.cell_size, self.cell_size):
             self.canvas.create_line(
