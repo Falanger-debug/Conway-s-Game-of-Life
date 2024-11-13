@@ -1,4 +1,6 @@
 import tkinter as tk
+from datetime import time
+import time
 from tkinter import ttk, filedialog
 import numpy as np
 import settings
@@ -130,8 +132,6 @@ class GameOfLifeApp:
         self.fps_combobox.grid(row=0, column=7, padx=5, pady=5)
         self.fps_combobox.bind("<<ComboboxSelected>>", self.change_fps)
 
-
-
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Game loop
@@ -157,6 +157,11 @@ class GameOfLifeApp:
         self.draw_grid()
 
     def game_loop(self):
+        current_time = time.time()
+        elapsed_time = current_time - time.time()
+
+        # if elapsed_time >= (1 / fps):
+        #     self.last_time = current_time
         if running:
             update_grid()
         self.draw_grid()
