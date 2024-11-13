@@ -15,11 +15,7 @@ INITIAL_DIR = "./data_points"
 
 # B: Birth, S: Survival, [Number of Neighbors]
 RULES = [
-    {
-        "name": "GAME_OF_LIFE",
-        "B": [3],
-        "S": [2, 3]
-    },
+    {"name": "GAME_OF_LIFE","B": [3],"S": [2, 3]},
     {
         "name": "SEEDS",
         "B": [2],
@@ -68,13 +64,16 @@ running = False
 class GameOfLifeApp:
     def __init__(self, root):
         self.root = root  # main container for all the widgets
-        self.root.title(RULE["name"])
+        self.root.title("Conway's Game of Life")
+        self.root.geometry("820x750")
         self.root.configure(bg=BACKGROUND_COLOR)
 
         # Apply ttk style
         style = ttk.Style()
         style.theme_use('clam')
-        style.configure("TButton", background=[("active", BUTTON_HOVER_COLOR)], foreground="white", relief="flat", font=('Helvetica', 10, 'bold'))
+        style.configure("TFrame", background=BACKGROUND_COLOR)
+        style.configure("TLabel", background=BACKGROUND_COLOR, foreground="white")
+        style.configure("TButton", background=BUTTON_COLOR, foreground="white", font=('Helvetica', 10, 'bold'))
         style.map("TButton", background=[("active", BUTTON_HOVER_COLOR)])
         # Zoom level
         self.cell_size = CELL_SIZE
