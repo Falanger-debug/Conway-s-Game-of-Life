@@ -1,5 +1,5 @@
 # Conway-s-Game-of-Life - Interactive Python Application
-This project is an interactive implementation of **Conway's Game of Live**, built with *Python* and *Tkinter*. It provides a dynamic environment for simulating and experimenting with the cellular automaton game, complete with pan and zoom functionality, adjustable rules, and file import/export features.
+This project is an interactive implementation of **Conway's Game of Live**, built with *Python* and *Tkinter*. It provides a dynamic environment for simulating and experimenting with the cellular automaton game.
 ## Table of Contents
 1. [Overwiew](#overview)
 2. [Features](#features)
