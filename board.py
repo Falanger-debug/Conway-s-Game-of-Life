@@ -9,6 +9,7 @@ CELL_SIZE = 10
 MIN_CELL_SIZE = 2
 MAX_CELL_SIZE = 50
 FPS = 10
+FULLSCREEN = False
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"
@@ -65,7 +66,7 @@ class GameOfLifeApp:
     def __init__(self, root):
         self.root = root  # main container for all the widgets
         self.root.title("Conway's Game of Life")
-        self.root.geometry("820x750")
+        self.root.attributes("-fullscreen", True) if FULLSCREEN else self.root.geometry("1080x720")
         self.root.configure(bg=BACKGROUND_COLOR)
 
         # Apply ttk style
@@ -82,9 +83,9 @@ class GameOfLifeApp:
         self.panning = False
 
         self.canvas = tk.Canvas(
-            root, width=800, height=600, bg=BACKGROUND_COLOR, highlightthickness=0
+            root, width=1100, height=750, bg=BACKGROUND_COLOR, highlightthickness=0
         )
-        self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+        self.canvas.grid(row=0, column=0, columnspan=5, padx=10, pady=10)
         self.canvas.bind("<ButtonPress-1>", self.start_pan)
         self.canvas.bind("<B1-Motion>", self.pan)
         self.canvas.bind("<ButtonRelease-1>", self.end_pan)
@@ -98,6 +99,11 @@ class GameOfLifeApp:
         # Control panel
         control_frame = ttk.LabelFrame(root, text="Controls", padding=(10, 10))
         control_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+
+        # Configure row and column weights to make them expandable
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(1, weight=0)
+        self.root.grid_columnconfigure(0, weight=1)
 
         # Buttons
         self.start_button = ttk.Button(control_frame, text="Start", command=self.toggle_running)
@@ -113,11 +119,11 @@ class GameOfLifeApp:
         self.save_button.grid(row=0, column=3, padx=5, pady=5)
 
         self.rule_label = ttk.Label(control_frame, text="Rule:")
-        self.rule_label.grid(row=1, column=0, padx=5, pady=5)
+        self.rule_label.grid(row=0, column=4, padx=5, pady=5)
 
         self.rule_combobox = ttk.Combobox(control_frame, values=[rule["name"] for rule in RULES])
         self.rule_combobox.current(0)
-        self.rule_combobox.grid(row=1, column=1, padx=5, pady=5)
+        self.rule_combobox.grid(row=0, column=5, padx=5, pady=5)
         self.rule_combobox.bind("<<ComboboxSelected>>", self.change_rule)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -125,11 +131,15 @@ class GameOfLifeApp:
         # Game loop
         self.draw_grid()
 
+    def resize_canvas(self, event=None):
+        self.canvas.config(width=self.root.winfo_width() - 20, height=self.root.winfo_height() - 160)
+        self.draw_grid()
+
     def draw_grid(self):
         self.canvas.delete("all")
-        print("Drawing grid")
         global running
-        print(f"Running: {running}")
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
         for x in range(WIDTH):
             for y in range(HEIGHT):
                 x1 = (x * self.cell_size) + self.offset_x
@@ -188,7 +198,6 @@ class GameOfLifeApp:
         self.clear_button.config(state=state)
         self.save_button.config(state=state)
 
-        print(f"Game {'started' if running else 'paused'}")
         if running:
             self.root.after(1000 // FPS, self.game_loop)
 
