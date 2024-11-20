@@ -4,7 +4,7 @@ CELL_SIZE = 10
 MIN_CELL_SIZE = 2
 MAX_CELL_SIZE = 50
 FPS = 15
-FULLSCREEN = True
+FULLSCREEN = False
 
 # Default directory for file dialog
 INITIAL_DIR = "./data_points"

@@ -1,6 +1,4 @@
 import tkinter as tk
-from datetime import time
-import time
 from tkinter import ttk, filedialog
 import numpy as np
 import settings
@@ -11,6 +9,7 @@ grid = np.zeros((WIDTH, HEIGHT), dtype=int)
 active_cells = set()
 running = False
 fps = settings.FPS
+
 
 def save_data_to_file():
     file_path = filedialog.asksaveasfilename(
@@ -315,6 +314,7 @@ class GameOfLifeApp:
 
         if running:
             self.game_loop()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
